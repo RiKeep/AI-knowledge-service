@@ -3,7 +3,6 @@ package com.ri.artificial.service.impl;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ri.artificial.domain.po.ChatHistory;
-import com.ri.artificial.domain.po.ChatMessage;
 import com.ri.artificial.mapper.ChatHistoryMapper;
 import com.ri.artificial.service.IChatHistoryService;
 import com.ri.artificial.service.IChatMessageService;
@@ -19,6 +18,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory> implements IChatHistoryService {
+
+    private static final String DEFAULT_TITLE = "新对话";
+
     private final IChatMessageService chatMessageService;
 
     @Override
@@ -31,6 +33,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         // 不存在则新建，标题留空，由调用方根据首条消息生成
         ChatHistory newHistory = new ChatHistory()
                 .setUserId(userId)
+                .setTitle(DEFAULT_TITLE)
                 .setHistoryUuid(sessionId);
         save(newHistory);
         return newHistory;

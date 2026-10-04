@@ -5,7 +5,6 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.ri.artificial.common.SseStreamSupport;
-import com.ri.artificial.config.TitleThreadPoolConfig;
 import com.ri.artificial.constant.MessageRole;
 import com.ri.artificial.domain.Result;
 import com.ri.artificial.domain.dto.ChatRequest;
@@ -146,8 +145,8 @@ public class ChatServiceImpl implements IChatService {
         // 获取会话记录，没有则新建
         ChatHistory history = chatHistoryService.getOrCreateChat(userId, sessionId);
 
-        // 如果是新建的会话，它是没有标题的，所以新会话使用AI生成标题
-        if(StrUtil.isBlank(history.getTitle())){
+        // 如果是新建的会话，它默认标题是"新对话"，所以新会话使用AI生成标题
+        if(DEFAULT_TITLE.equals(history.getTitle())){
             generateAsync(userId, history.getHistoryId(), chatRequest.getMessage());
         }
 
@@ -229,23 +228,13 @@ public class ChatServiceImpl implements IChatService {
         }
         try {
             titleThreadPool.execute(() -> {
-                String title = resolveTitle(message);
-                try {
-                    chatHistoryService.renameChatHistory(userId, historyId, title);
-                } catch (Exception e) {
-                    log.warn("回写会话标题失败, historyId={}, title={}", historyId, title, e);
-                }
+                String systemPrompt = String.format("把下面这句话的核心意思作为会话标题，不超过20字，不要多余内容：%s", message);
+                String title = chatClient.prompt().system(systemPrompt).call().content();
+                chatHistoryService.renameChatHistory(userId, historyId, title);
             });
         } catch (RejectedExecutionException e) {
             log.warn("标题生成任务被拒绝, historyId={}", historyId, e);
         }
-    }
-
-    /** 生成标题；模型失败或返回空，统一落回默认标题 */
-    private String resolveTitle(String message) {
-        String systemPrompt = String.format("把下面这句话的核心意思作为会话标题，不超过20字，不要多余内容：%s", message);
-        String title = chatClient.prompt().system(systemPrompt).call().content();
-        return StrUtil.isBlank(title) ? DEFAULT_TITLE : title;
     }
 
     /** 一次对话的公共前置产物：会话信息 + 已装配（含可选 RAG）的请求 */

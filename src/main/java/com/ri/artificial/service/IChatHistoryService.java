@@ -11,15 +11,15 @@ import java.util.List;
  * @date 2026-10-01 11:12
  */
 public interface IChatHistoryService extends IService<ChatHistory> {
-    ChatHistory getOrCreateChat(Integer userId, String sessionId);
+    ChatHistory getOrCreateChat(Long userId, String sessionId);
 
-    ChatHistory getChatById(Integer userId, String sessionId);
+    ChatHistory getChatById(Long userId, String sessionId);
 
-    List<ChatHistory> queryChatHistory(Integer userId);
+    List<ChatHistory> queryChatHistory(Long userId);
 
-    void deleteChatHistory(Integer userId, Integer historyId);
+    void deleteChatHistory(Long userId, Long historyId);
 
-    void renameChatHistory(Integer userId, Integer historyId, String title);
+    void renameChatHistory(Long userId, Long historyId, String title);
 
-    void removeAllHistory(Integer userId);
+    void removeAllHistory(Long userId);
 }

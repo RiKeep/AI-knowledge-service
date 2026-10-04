@@ -20,7 +20,7 @@ import java.util.List;
 public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatMessage> implements IChatMessageService {
 
     @Override
-    public void saveMessage(Integer userId, Integer historyId, String role, String content, String reasoning) {
+    public void saveMessage(Long userId, Long historyId, String role, String content, String reasoning) {
         save(new ChatMessage()
                 .setUserId(userId)
                 .setHistoryId(historyId)
@@ -30,7 +30,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     }
 
     @Override
-    public List<ChatMessage> listMessages(Integer userId, Integer historyId) {
+    public List<ChatMessage> listMessages(Long userId, Long historyId) {
         // 查询对应用户的聊天记录，最多返回 100 条
         return lambdaQuery()
                 .eq(ChatMessage::getUserId, userId)
@@ -41,7 +41,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     }
 
     @Override
-    public void deleteByHistoryId(Integer userId, Integer historyId) {
+    public void deleteByHistoryId(Long userId, Long historyId) {
         lambdaUpdate().eq(ChatMessage::getUserId, userId)
                 .eq(ChatMessage::getHistoryId, historyId)
                 .remove();
@@ -49,7 +49,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
 
     @Override
     @Transactional
-        public void deleteMessagesAfterTime(Integer userId, Integer messageId, Integer historyId) {
+        public void deleteMessagesAfterTime(Long userId, Long messageId, Long historyId) {
         if(ObjectUtil.isNull(messageId) || ObjectUtil.isNull(historyId)) {
             throw new BadRequestException("消息ID和会话记录ID不能为空", HttpStatus.HTTP_BAD_REQUEST);
         }
@@ -73,7 +73,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
 
     @Override
     @Transactional
-    public void reAnswerUserMessage(Integer userId, Integer messageId, Integer historyId, String message) {
+    public void reAnswerUserMessage(Long userId, Long messageId, Long historyId, String message) {
         this.deleteMessagesAfterTime(userId, messageId, historyId);
     }
 }

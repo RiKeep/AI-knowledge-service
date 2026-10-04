@@ -23,11 +23,11 @@ public class ChatController {
 
     @PostMapping
     public Result<ChatAnswerVO> chat(@RequestBody ChatRequest chatRequest) {
-        return chatService.chat(chatRequest, StpUtil.getLoginIdAsInt());
+        return chatService.chat(chatRequest, StpUtil.getLoginIdAsLong());
     }
 
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> stream(@RequestBody ChatRequest chatRequest) {
-        return chatService.stream(chatRequest, StpUtil.getLoginIdAsInt());
+        return chatService.stream(chatRequest, StpUtil.getLoginIdAsLong());
     }
 }

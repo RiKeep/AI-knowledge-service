@@ -14,10 +14,11 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 @TableName("sys_knowledge")
 public class SysKnowledge {
-    @TableId(type = IdType.AUTO)
-    private Integer id;
+    // 雪花 ID 为 64 位，必须用 Long 承接；用 Integer 会被截断（含符号位），既不唯一也可能为负
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
     /** 归属用户id（区分不同用户的知识库数据） */
-    private Integer userId;
+    private Long userId;
     private String vectorId;
     private String fileName;
     private String fileUrl;

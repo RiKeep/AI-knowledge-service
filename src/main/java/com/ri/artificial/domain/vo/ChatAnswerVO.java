@@ -12,7 +12,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ChatAnswerVO {
     private String sessionId;
-    private Integer historyId;
+    private Long historyId;
     private String content;
     private String reasoning;
 }

@@ -17,14 +17,15 @@ import java.time.LocalDateTime;
 @TableName("chat_message")
 public class ChatMessage {
     // 消息ID
-    @TableId(type = IdType.AUTO)
-    private Integer messageId;
+    // 雪花 ID 为 64 位，必须用 Long 承接；用 Integer 会被截断（含符号位），既不唯一也可能为负
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long messageId;
 
     // 会话ID（关联 chat_history.history_id）
-    private Integer historyId;
+    private Long historyId;
 
     // 用户ID
-    private Integer userId;
+    private Long userId;
 
     // 角色：user / assistant / system
     private String role;

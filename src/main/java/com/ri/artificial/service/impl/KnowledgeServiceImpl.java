@@ -61,7 +61,7 @@ public class KnowledgeServiceImpl extends ServiceImpl<SysKnowledgeMapper, SysKno
 
     @Override
     public Page<SysKnowledge> pageKnowledge(KnowledgePageQuery query) {
-        Integer userId = StpUtil.getLoginIdAsInt();
+        Long userId = StpUtil.getLoginIdAsLong();
         return lambdaQuery().eq(ObjectUtil.isNotNull(userId), SysKnowledge::getUserId, userId)
                 .like(StrUtil.isNotBlank(query.getFileName()), SysKnowledge::getFileName, query.getFileName())
                 .page(query.toPage());
@@ -70,7 +70,7 @@ public class KnowledgeServiceImpl extends ServiceImpl<SysKnowledgeMapper, SysKno
     @Override
     @Transactional
     public Result<String> uploadFiles(List<MultipartFile> files, String splitterName, SplitterForm params) {
-        Integer userId = StpUtil.getLoginIdAsInt();
+        Long userId = StpUtil.getLoginIdAsLong();
         // 上传到oss服务器，拿到所有文件url。
         List<String> fileUrls = ossClient.uploadFiles(files);
         // 逐个保存文件信息，分块数后续解析后回填
@@ -198,8 +198,11 @@ public class KnowledgeServiceImpl extends ServiceImpl<SysKnowledgeMapper, SysKno
 
     @Override
     @Transactional
-    public Result<String> deleteKnowledge(List<Integer> ids) {
-        List<SysKnowledge> list = listByIds(ids);
+    public Result<String> deleteKnowledge(Long userId, List<Long> ids) {
+        // 查询对应用户的知识库
+        List<SysKnowledge> list = lambdaQuery().in(SysKnowledge::getId, ids)
+                        .eq(SysKnowledge::getUserId, userId).list();
+
         if(CollUtil.isEmpty(list)){
             throw new BadRequestException("文件不存在", HttpStatus.HTTP_BAD_REQUEST);
         }
@@ -232,7 +235,7 @@ public class KnowledgeServiceImpl extends ServiceImpl<SysKnowledgeMapper, SysKno
 
     @Override
     public List<String> listVectorIds(List<Long> docIds) {
-        Integer userId = StpUtil.getLoginIdAsInt();
+        Long userId = StpUtil.getLoginIdAsLong();
         // 根据 docIds 拿到该用户的知识库文件
         List<SysKnowledge> list = lambdaQuery().in(SysKnowledge::getId, docIds)
                 .eq(SysKnowledge::getUserId, userId)

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Data
 public class ChatHistoryVO {
-    private Integer historyId;
+    private Long historyId;
     private String historyUuid;
     private String title;
     private LocalDateTime createTime;

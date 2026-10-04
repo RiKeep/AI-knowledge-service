@@ -35,7 +35,7 @@ public interface IKnowledgeService extends IService<SysKnowledge> {
     /**
      * 删除知识库文件（同步删除 OSS 中的文件）
      */
-    Result<String> deleteKnowledge(List<Integer> ids);
+    Result<String> deleteKnowledge(Long userId, List<Long> ids);
 
     /**
      * 查询对应的知识库列表ID

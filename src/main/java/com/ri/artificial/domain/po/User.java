@@ -14,8 +14,9 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @TableName("sys_user")
 public class User {
-    @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    // 雪花 ID 为 64 位，必须用 Long 承接；用 Integer 会被截断（含符号位），既不唯一也可能为负
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    private Long id;
     private String username;
     private String password;
 }

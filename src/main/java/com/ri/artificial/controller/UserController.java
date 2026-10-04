@@ -25,7 +25,7 @@ public class UserController {
     }
 
     @GetMapping("/logout")
-    public Result<String> logout(Integer userId) {
+    public Result<String> logout(Long userId) {
         return userService.logout(userId);
     }
 }

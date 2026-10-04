@@ -23,6 +23,7 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
@@ -50,7 +51,7 @@ public class ChatServiceImpl implements IChatService {
     private final IKnowledgeService knowledgeService;
 
     @Override
-    public Result<ChatAnswerVO> chat(ChatRequest chatRequest, Integer userId) {
+    public Result<ChatAnswerVO> chat(ChatRequest chatRequest, Long userId) {
         Prepared prepared = prepare(chatRequest, userId);
 
         String content = "";
@@ -77,7 +78,7 @@ public class ChatServiceImpl implements IChatService {
     }
 
     @Override
-    public Flux<ServerSentEvent<String>> stream(ChatRequest chatRequest, Integer userId) {
+    public Flux<ServerSentEvent<String>> stream(ChatRequest chatRequest, Long userId) {
         Prepared prepared = prepare(chatRequest, userId);
 
         // 是否透出思考过程：关闭时既不累积也不下发 reasoning 帧
@@ -127,7 +128,7 @@ public class ChatServiceImpl implements IChatService {
      * 一次对话的公共前置。流式与非流式都走这里，保证两条路的行为一致：
      * 会话定位、历史装载、用户消息落库、RAG 挂载。
      */
-    private Prepared prepare(ChatRequest chatRequest, Integer userId) {
+    private Prepared prepare(ChatRequest chatRequest, Long userId) {
         // 前端未带 sessionId 时生成一个，随返回值交给前端续接，否则每条消息都会新开会话
         String sessionId = StrUtil.isBlank(chatRequest.getSessionId())
                 ? UUID.randomUUID().toString()
@@ -163,7 +164,7 @@ public class ChatServiceImpl implements IChatService {
      * 检索增强：只在当前用户、且（用户选中文件时）指定文档的向量里检索。
      * user_id 过滤必须始终存在，否则会检索到其他用户上传的知识库。
      */
-    private Advisor ragAdvisor(Integer userId, String message, List<Long> docIds) {
+    private Advisor ragAdvisor(Long userId, String message, List<Long> docIds) {
         // 未选中文件时不查文档 id：listVectorIds 未对空入参做保护，空场景下不应进入
         List<String> vectorIds = CollUtil.isEmpty(docIds)
                 ? List.of()
@@ -182,7 +183,6 @@ public class ChatServiceImpl implements IChatService {
                 .topK(10)
                 .similarityThreshold(0.6)
                 .build();
-
         return QuestionAnswerAdvisor.builder(vectorStore).searchRequest(searchRequest).build();
     }
 
@@ -209,7 +209,7 @@ public class ChatServiceImpl implements IChatService {
     }
 
     /** 一次对话的公共前置产物：会话信息 + 已装配（含可选 RAG）的请求 */
-    private record Prepared(Integer userId, String sessionId, Integer historyId,
+    private record Prepared(Long userId, String sessionId, Long historyId,
                             ChatClient.ChatClientRequestSpec spec) {
     }
 }

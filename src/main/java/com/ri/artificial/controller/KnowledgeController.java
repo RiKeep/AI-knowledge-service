@@ -1,5 +1,6 @@
 package com.ri.artificial.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.ri.artificial.domain.Result;
 import com.ri.artificial.domain.dto.SplitterForm;
@@ -45,8 +46,8 @@ public class KnowledgeController {
     }
 
     @DeleteMapping("/del/batch/{ids}")
-    public Result<String> deleteKnowledgeByIds(@PathVariable List<Integer> ids) {
-        return knowledgeService.deleteKnowledge(ids);
+    public Result<String> deleteKnowledgeByIds(@PathVariable List<Long> ids) {
+        return knowledgeService.deleteKnowledge(StpUtil.getLoginIdAsLong(), ids);
     }
 
     /** 全部可用分片策略及其参数定义，前端据此动态渲染配置表单 */

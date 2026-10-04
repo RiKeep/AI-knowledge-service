@@ -38,7 +38,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
-    public Result<String> logout(Integer userId) {
+    public Result<String> logout(Long userId) {
         // 如果用户未登录，直接抛出 NotLoginException 异常，全局捕获
         StpUtil.checkLogin();
         // 如果用户已登录，执行注销操作

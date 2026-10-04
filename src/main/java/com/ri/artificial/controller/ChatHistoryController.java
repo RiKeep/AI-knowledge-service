@@ -31,7 +31,7 @@ public class ChatHistoryController {
     @GetMapping("/list")
     public Result<List<ChatHistoryVO>> listHistory() {
         // 获取对应的 histories
-        List<ChatHistory> histories = chatHistoryService.queryChatHistory(StpUtil.getLoginIdAsInt());
+        List<ChatHistory> histories = chatHistoryService.queryChatHistory(StpUtil.getLoginIdAsLong());
         // 使用BeanUtil.copyToList方法把它转换成前端所需要的对象
         List<ChatHistoryVO> hisVos = BeanUtil.copyToList(histories, ChatHistoryVO.class);
         return Result.success(hisVos);
@@ -39,7 +39,7 @@ public class ChatHistoryController {
 
     @GetMapping("/messages")
     public Result<List<ChatMessageVO>> listMessages(@RequestParam String sessionId) {
-        Integer userId = StpUtil.getLoginIdAsInt();
+        Long userId = StpUtil.getLoginIdAsLong();
         // 先查询出对应的会话历史，如果没有就返回空
         ChatHistory history = chatHistoryService.getChatById(userId, sessionId);
         if (history == null) {
@@ -53,27 +53,27 @@ public class ChatHistoryController {
     }
 
     @PutMapping("/{id}/title")
-    public Result<String> renameTitle(@PathVariable Integer id, @RequestParam String title) {
-        chatHistoryService.renameChatHistory(StpUtil.getLoginIdAsInt(), id, title);
+    public Result<String> renameTitle(@PathVariable Long id, @RequestParam String title) {
+        chatHistoryService.renameChatHistory(StpUtil.getLoginIdAsLong(), id, title);
         return Result.success();
     }
 
     @DeleteMapping("/del/after-time/{messageId}/{historyId}")
-    public Result<String> deleteAfterTimeMsg(@PathVariable("messageId")Integer messageId,
-    @PathVariable("historyId") Integer historyId) {
-        chatMessageService.deleteMessagesAfterTime(StpUtil.getLoginIdAsInt(), messageId, historyId);
+    public Result<String> deleteAfterTimeMsg(@PathVariable("messageId") Long messageId,
+    @PathVariable("historyId") Long historyId) {
+        chatMessageService.deleteMessagesAfterTime(StpUtil.getLoginIdAsLong(), messageId, historyId);
         return Result.success();
     }
 
     @DeleteMapping("/del/{id}")
-    public Result<String> deleteHistory(@PathVariable Integer id) {
-        chatHistoryService.deleteChatHistory(StpUtil.getLoginIdAsInt(), id);
+    public Result<String> deleteHistory(@PathVariable Long id) {
+        chatHistoryService.deleteChatHistory(StpUtil.getLoginIdAsLong(), id);
         return Result.success();
     }
 
     @DeleteMapping("/del/all")
     public Result<String> deleteAllHistories() {
-        chatHistoryService.removeAllHistory(StpUtil.getLoginIdAsInt());
+        chatHistoryService.removeAllHistory(StpUtil.getLoginIdAsLong());
         return Result.success();
     }
 }

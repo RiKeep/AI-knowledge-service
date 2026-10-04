@@ -22,7 +22,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     private final IChatMessageService chatMessageService;
 
     @Override
-    public ChatHistory getOrCreateChat(Integer userId, String sessionId) {
+    public ChatHistory getOrCreateChat(Long userId, String sessionId) {
         // 按 (user_id, history_uuid) 查询，已存在则直接返回，避免同会话重复建记录
         ChatHistory history = getChatById(userId, sessionId);
         if (ObjectUtil.isNotNull(history)) {
@@ -37,14 +37,14 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     @Override
-    public ChatHistory getChatById(Integer userId, String sessionId) {
+    public ChatHistory getChatById(Long userId, String sessionId) {
         return lambdaQuery().eq(ChatHistory::getUserId, userId)
                 .eq(ChatHistory::getHistoryUuid, sessionId)
                 .one();
     }
 
     @Override
-    public List<ChatHistory> queryChatHistory(Integer userId) {
+    public List<ChatHistory> queryChatHistory(Long userId) {
         // 查询当前用户的会话历史, 按更新时间倒序排列
         return lambdaQuery().eq(ChatHistory::getUserId, userId)
                 .orderByDesc(ChatHistory::getUpdateTime)
@@ -52,7 +52,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     @Override
-    public void deleteChatHistory(Integer userId, Integer historyId) {
+    public void deleteChatHistory(Long userId, Long historyId) {
         // 只删属于当前用户的会话（防止越权）
         if (!lambdaQuery().eq(ChatHistory::getUserId, userId)
                 .eq(ChatHistory::getHistoryId, historyId)
@@ -68,7 +68,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     @Override
-    public void renameChatHistory(Integer userId, Integer historyId, String title) {
+    public void renameChatHistory(Long userId, Long historyId, String title) {
         lambdaUpdate().eq(ChatHistory::getHistoryId, historyId)
                 .eq(ChatHistory::getUserId, userId)
                 .set(ChatHistory::getTitle, title)
@@ -76,7 +76,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     @Override
-    public void removeAllHistory(Integer userId) {
+    public void removeAllHistory(Long userId) {
         // 删除所有聊天记录的消息
         queryChatHistory(userId).forEach(h -> chatMessageService.deleteByHistoryId(userId, h.getHistoryId()));
         // 删除所有聊天记录历史

@@ -13,9 +13,9 @@ import reactor.core.publisher.Flux;
 public interface IChatService {
 
     /** 非流式输出 */
-    Result<ChatAnswerVO> chat(ChatRequest chatRequest, Integer userId);
+    Result<ChatAnswerVO> chat(ChatRequest chatRequest, Long userId);
 
     /** 流式输出 */
-    Flux<ServerSentEvent<String>> stream(ChatRequest chatRequest, Integer userId);
+    Flux<ServerSentEvent<String>> stream(ChatRequest chatRequest, Long userId);
 }
 

@@ -13,5 +13,5 @@ import com.ri.artificial.domain.vo.UserLoginVO;
 public interface IUserService extends IService<User> {
     Result<UserLoginVO> login(LoginFormDTO loginFormDTO);
 
-    Result<String> logout(Integer userId);
+    Result<String> logout(Long userId);
 }

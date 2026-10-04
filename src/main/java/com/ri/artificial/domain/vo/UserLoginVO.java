@@ -14,7 +14,7 @@ import lombok.experimental.Accessors;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserLoginVO {
-    private Integer userId;
+    private Long userId;
     private Long expire;
     private String token;
 }

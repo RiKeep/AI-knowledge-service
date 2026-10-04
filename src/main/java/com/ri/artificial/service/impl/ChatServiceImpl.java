@@ -5,6 +5,7 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.ri.artificial.common.SseStreamSupport;
+import com.ri.artificial.config.TitleThreadPoolConfig;
 import com.ri.artificial.constant.MessageRole;
 import com.ri.artificial.domain.Result;
 import com.ri.artificial.domain.dto.ChatRequest;
@@ -16,6 +17,7 @@ import com.ri.artificial.service.IChatMessageService;
 import com.ri.artificial.service.IChatService;
 import com.ri.artificial.service.IKnowledgeService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
@@ -23,22 +25,24 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 
 /**
  * @author Ri
  * @date 2026-10-01 11:14
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatServiceImpl implements IChatService {
@@ -49,6 +53,9 @@ public class ChatServiceImpl implements IChatService {
     private final IChatMessageService chatMessageService;
     private final SseStreamSupport sseStreamSupport;
     private final IKnowledgeService knowledgeService;
+    private final ThreadPoolTaskExecutor titleThreadPool;
+
+    private static final String DEFAULT_TITLE = "新对话";
 
     @Override
     public Result<ChatAnswerVO> chat(ChatRequest chatRequest, Long userId) {
@@ -124,6 +131,8 @@ public class ChatServiceImpl implements IChatService {
                 "ChatService(stream)");
     }
 
+
+
     /**
      * 一次对话的公共前置。流式与非流式都走这里，保证两条路的行为一致：
      * 会话定位、历史装载、用户消息落库、RAG 挂载。
@@ -136,6 +145,11 @@ public class ChatServiceImpl implements IChatService {
 
         // 获取会话记录，没有则新建
         ChatHistory history = chatHistoryService.getOrCreateChat(userId, sessionId);
+
+        // 如果是新建的会话，它是没有标题的，所以新会话使用AI生成标题
+        if(StrUtil.isBlank(history.getTitle())){
+            generateAsync(userId, history.getHistoryId(), chatRequest.getMessage());
+        }
 
         // 获取当前会话历史上下文（从 MySQL 查询），必须在落库本条消息之前查询，否则本条会重复进入上下文
         List<Message> histories = chatMessageService.listMessages(userId, history.getHistoryId()).stream()
@@ -206,6 +220,32 @@ public class ChatServiceImpl implements IChatService {
         // 保存消息
         chatMessageService.saveMessage(prepared.userId(), prepared.historyId(), MessageRole.ASSISTANT,
                 content, StrUtil.isBlank(reasoning) ? null : reasoning);
+    }
+
+    /** 异步生成标题并回写，失败降级为默认标题，绝不抛出异常影响主流程 */
+    private void generateAsync(Long userId, Long historyId, String message) {
+        if (historyId == null || StrUtil.isBlank(message)) {
+            return;
+        }
+        try {
+            titleThreadPool.execute(() -> {
+                String title = resolveTitle(message);
+                try {
+                    chatHistoryService.renameChatHistory(userId, historyId, title);
+                } catch (Exception e) {
+                    log.warn("回写会话标题失败, historyId={}, title={}", historyId, title, e);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            log.warn("标题生成任务被拒绝, historyId={}", historyId, e);
+        }
+    }
+
+    /** 生成标题；模型失败或返回空，统一落回默认标题 */
+    private String resolveTitle(String message) {
+        String systemPrompt = String.format("把下面这句话的核心意思作为会话标题，不超过20字，不要多余内容：%s", message);
+        String title = chatClient.prompt().system(systemPrompt).call().content();
+        return StrUtil.isBlank(title) ? DEFAULT_TITLE : title;
     }
 
     /** 一次对话的公共前置产物：会话信息 + 已装配（含可选 RAG）的请求 */
